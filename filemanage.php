@@ -14,10 +14,6 @@ function my_is_dir ($file) {
 
 function get_files($dir) {
 	$files = array();
-
-	//$files[iconv("GB2312", "UTF-8//IGNORE", $dir . "--dir")] = "d";
-	//$files[iconv("GB2312", "UTF-8//IGNORE", $_SESSION['dir'])] = "{$_SESSION['dir']}";
-	
 	if (!is_dir($dir)) {
 		return $files;
 	}
@@ -59,14 +55,6 @@ function download($file, $downname) {
 		echo $filecon;
 	}
 	fclose($fp);
-}
-
-if (isset($_GET['u']) && isset($_GET['p'])) {
-	$username = $_GET['u'];
-	$password = $_GET['p'];
-	if ($username == 'pfh' &&  $password == '233') {
-		$_SESSION['self'] = 332;
-	}
 }
 
 if (isset($_SESSION['self']) && $_SESSION['self'] == 332) {
@@ -111,12 +99,98 @@ if (isset($_SESSION['self']) && $_SESSION['self'] == 332) {
 				}
 				download($_SESSION['dir'] . $filename, $filename);
 			}
+		} else if ($_GET['action'] == 'upload') {
+			if ($_FILES["file"]["error"] > 0) {
+				echo "              Error :" . $_FILES["file"]["error"] . "<br />\n";
+			} else {
+				$name = iconv("UTF-8", "gb2312", $_FILES["file"]["name"]);
+				echo "              Upload: " . $_FILES["file"]["name"] . "<br />\n";
+				echo "              Type: " . $_FILES["file"]["type"] . "<br />\n";
+				echo "              Size: " . ($_FILES["file"]["size"] / 1024) . " KiB<br />\n";
+				echo "              Stored in: " . $_FILES["file"]["tmp_name"] . "<br />";
+				move_uploaded_file($_FILES["file"]["tmp_name"], "./upload-files/" . $name);
+				echo "              File are saved as: " . "upload-files/" . $_FILES["file"]["name"];
+			}
 		}
 	} else {
 		formalHtml($ip_addr, $path);
 	}
 } else {
-	echo "<h1>You don't have the permission to accessing this page.</h1>";
+	if (isset($_GET['action']) && $_GET['action'] == 'login') {
+		$return = array();
+		if (isset($_GET['username']) && isset($_GET['password'])) {
+			if ($_GET['username'] == 'admin' && $_GET['password'] == '6666662333') {
+				$return['status'] = 'success';
+				$_SESSION['self'] = 332;
+			} else {
+				$return['status'] = 'fail';
+			}
+		} else {
+			$return['status'] = 'fail';
+		}
+		echo json_encode($return);
+	} else {
+		defaulMainBody($ip_addr);
+	}
+}
+
+function defaulMainBody($ip) {
+	echo <<<myendsign
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script type="text/javascript" src="http://{$ip}/js/jquery.min.js"></script>
+    <link rel="stylesheet" href="http://{$ip}/css/bootstrap.min.css">
+	<link rel="stylesheet" href="http://{$ip}/css/bootstrap.min.css">
+	<link rel="stylesheet" href="http://{$ip}/css/font-awesome.min.css">
+    <!--script src="http://{$ip}/js/jquery.min.js"></script-->
+    <script src="http://{$ip}/js/bootstrap.min.js"></script>
+  </head>
+  <body>
+		<script>
+		function login() {
+			var username = document.getElementById('username').value;
+			var password = document.getElementById('password').value;
+			if (username.length < 1 || password.length < 1) {
+				if (username.length < 1) {
+					document.getElementById('usernamediv').className  = "form-group has-error";
+				}
+				if (password.length < 1) {
+					document.getElementById('passworddiv').className  = "form-group has-error";
+				}
+			} else {
+				$.get("http://{$ip}/filemanage.php?action=login&username=" + username + '&password=' + password, function(data1, status) {
+		            	var myjson = $.parseJSON(data1);
+						if (myjson['status'] == 'success') {
+							window.location.href = 'filemanage.php';
+						} else {
+							document.getElementById('warning').value = 'Username or password wrong try again please.';
+						}
+		            });
+			}
+		}
+		function changeClass(element, className) {
+			document.getElementById(element).className = className;
+		}
+		</script>
+		<div class="container center" style="max-width:300px;">
+		  <br />
+		  <div id="usernamediv">
+		  <input type="email" class="form-control" id="username" placeholder="Enter Username" onkeypress="changeClass('usernamediv', '')">
+		  </div>
+		  <br />
+		  <div id="passworddiv">
+		  <input type="password" class="form-control" id="password" placeholder="Password" onkeypress="changeClass('passworddiv', '')">
+		  </div>
+		  <br />
+		  <button class="btn btn-default" onClick="login()" style="width:100%;">Login</button>
+		  <p id='warning'></p>
+		</div>
+  </body>
+  </html>
+myendsign;
 }
 
 function formalHtml($ip, $path)
@@ -160,9 +234,27 @@ myendsign;
 			
 		}
 	}
+	
 echo <<<myendsign
-	</tr>
-	</table>
+</tr>
+</table>
+<form action="filemanage.php?action=upload&" method="POST" enctype="multipart/form-data">
+<div class="row">
+    <div class="col-md-2 col-md-offset-4">
+		<input type="text" class="btn btn-default" id="f_file" value="no file selected">
+	</div>
+	<div class="col-md-1">
+		<input type="button" value="Select" class="btn btn-default" onClick="file.click()">
+	</div>
+    <div class="col-md-1">
+		<input type="submit" name="submit" value="Upload" class="btn btn-default"></input>
+	</div>
+	<input name="file" type="file" id="file" onchange="f_file.value=this.value" class="btn btn-default" style="display:none">
+</div>
+</form>
+myendsign;
+
+echo <<<myendsign
 	</div>
     <script type="text/javascript">
         function goback() {
@@ -201,7 +293,6 @@ echo <<<myendsign
 				  function makeFile(key, value) {
 		            		if (value == "d") {
 								if (key == "..") {
-									//$("<tr><td><i class='icon-folder-close-alt icon-2x'></i></td><td><a href=\"javascript:getUpFolder('" + key + "')\">" + "<i class='icon-arrow-up icon-2x'></i>" + "</a></td></tr>").appendTo("#file_list");
 									var newRow = "<tr><td><i class='icon-folder-close-alt icon-2x'></i></td><td><a href=\"javascript:getUpFolder('" + key + "')\">" + "<i class='icon-arrow-up icon-2x'></i>" + "</a></td></tr>";
 									var tr0 = $("#file_list tr").eq(0);
 									if (tr0.size() == 0) {
@@ -210,12 +301,12 @@ echo <<<myendsign
 										tr0.after(newRow);
 									}
 								} else if (key == '.') {
-									
 								} else {
 									$("<tr><td><i class='icon-folder-close-alt icon-2x'></i></td><td><a href=\"javascript:getData('" + key + "')\">" + key + "</a></td></tr>").appendTo("#file_list");
 								}
 			      			} else {
-			      				$("<tr><td><i class='icon-file-alt icon-2x'></i></td><td><a href='http://{$ip}/filemanage.php?action=download&filename=" + key + "'>" + key + "</a></td><td><a href='http://{$ip}/play.php?filename=" + key + "'>play</a></td></tr>").appendTo("#file_list");
+			      				//$("<tr><td><i class='icon-file-alt icon-2x'></i></td><td><a href='http://{$ip}/filemanage.php?action=download&filename=" + key + "'>" + key + "</a></td><td><a href='http://{$ip}/play.php?filename=" + key + "'>play</a></td></tr>").appendTo("#file_list");
+								$("<tr><td><i class='icon-file-alt icon-2x'></i></td><td><a href='http://{$ip}/filemanage.php?action=download&filename=" + key + "'>" + key + "</a></td><td><a href='#'>play</a></td></tr>").appendTo("#file_list");
 			      			}
 		          }
 				  
@@ -224,28 +315,6 @@ echo <<<myendsign
 							var myjson = $.parseJSON(data1);
 							$("#file_list").html("");
 							$.each(myjson, makeFile);
-							/*
-							function(key, value) {
-								if (value == "d") {
-									if (key == "..") {
-										var newRow = "<tr><td><i class='icon-folder-close-alt icon-2x'></i></td><td><a href=\"javascript:getUpFolder('" + key + "')\">" + "<i class='icon-arrow-up icon-2x'></i>" + "</a></td></tr>";
-										//$("#file_list tr:eq(0)").after(newRow);
-										var tr0 = $("#file_list tr").eq(0);
-										if (tr0.size() == 0) {
-											$(newRow).appendTo("#file_list");
-										} else {
-											tr0.after(newRow);
-										}
-									} else if (key == '.') {
-										
-									} else {
-										$("<tr><td><i class='icon-folder-close-alt icon-2x'></i></td><td><a href=\"javascript:getData('" + key + "')\">" + key + "</a></td></tr>").appendTo("#file_list");
-									}
-								} else {
-									$("<tr><td><i class='icon-file-alt icon-2x'></i></td><td><a href='http://{$ip}/filemanage.php?action=download&filename=" + key + "'>" + key + "</a></td></tr>").appendTo("#file_list");
-								}
-							}
-							*/
 					  });
 				  }
 				  function getUpFolder() {
@@ -253,30 +322,6 @@ echo <<<myendsign
 							var myjson = $.parseJSON(data1);
 							$("#file_list").html("");
 							$.each(myjson, makeFile);
-							/*
-							function(key, value) {
-								if (value == "d") {
-									//$("<p><li class='icon-folder-close-alt icon-2x'><a href=\"javascript:getData('" + path + "/" + key + "')\">" + key + "</a></li></p>").appendTo("#file_list");
-									if (key == "..") {
-										//$("<tr><td><i class='icon-folder-close-alt icon-2x'></i></td><td><a href=\"javascript:getUpFolder('" + key + "')\">" + "<i class='icon-arrow-up icon-2x'></i>" + "</a></td></tr>").appendTo("#file_list");
-										var newRow = "<tr><td><i class='icon-folder-close-alt icon-2x'></i></td><td><a href=\"javascript:getUpFolder('" + key + "')\">" + "<i class='icon-arrow-up icon-2x'></i>" + "</a></td></tr>";
-										//$("#file_list tr:eq(0)").after(newRow);
-										var tr0 = $("#file_list tr").eq(0);
-										if (tr0.size() == 0) {
-											$(newRow).appendTo("#file_list");
-										} else {
-											tr0.after(newRow);
-										}
-									} else if (key == '.') {
-										
-									} else {
-										$("<tr><td><i class='icon-folder-close-alt icon-2x'></i></td><td><a href=\"javascript:getData('" + key + "')\">" + key + "</a></td></tr>").appendTo("#file_list");
-									}
-								} else {
-									$("<tr><td><i class='icon-file-alt icon-2x'></i></td><td><a href='http://{$ip}/filemanage.php?action=download&filename=" + key + "'>" + key + "</a></tdi></tr>").appendTo("#file_list");
-								}
-							}
-							*/
 					  });
 				  }
 			    </script>
@@ -290,5 +335,5 @@ echo <<<myendsign
 </html>
 myendsign;
 }
-
+session_write_close()
 ?>

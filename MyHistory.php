@@ -16,7 +16,7 @@ class MyHistory {
     
     public function __construct() {
         $this->head = new URLNode();
-        $this->now = $head;
+        $this->now = $this->head;
     }
     
     public function now() {
