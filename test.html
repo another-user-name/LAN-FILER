@@ -1,0 +1,70 @@
+    <div class="panel panel-default">
+        <audio id='media' controls="controls" style="border:1px;min-width:500px;max-width:800px;max-height:100px;" autoplay="autoplay">
+          <source src="media.php?filename=H:/CloudMusic//Emilia - Big Big World.mp3" type="audio/mp3" />
+          <embed height="100px" width="500px" src="media.php?filename=H:/CloudMusic//Emilia - Big Big World.mp3" />
+        </audio>
+    </div>  <div class="container">
+        <button id="add_cut_button" class="btn btn-default" onclick="addOrCut()">
+            RemoveFromList
+        </button>
+        <button id="" class="btn btn-default" onclick="playlist(0)">
+            PlayList
+        </button>
+    </div>
+    <br />
+    <div class="container">
+        <table id='playlisttbl' class='table table-condensed' align='center'><tr><td><a href='play.php?filename=H:/CloudMusic/Emilia - Big Big World.mp3'>Emilia - Big Big World.mp3</a></td><td><a href='javascript:addOrCut("H:/CloudMusic/Emilia - Big Big World.mp3")'>RemoveFromList</a><td></td></tr><tr><td><a href='play.php?filename=H:/CloudMusic/Flo Rida - Whistle.mp3'>Flo Rida - Whistle.mp3</a></td><td><a href='javascript:addOrCut("H:/CloudMusic/Flo Rida - Whistle.mp3")'>RemoveFromList</a><td></td></tr><tr><td><a href='play.php?filename=H:/CloudMusic/38BEETS - さくらの季节.mp3'>38BEETS - さくらの季节.mp3</a></td><td><a href='javascript:addOrCut("H:/CloudMusic/38BEETS - さくらの季节.mp3")'>RemoveFromList</a><td></td></tr>
+        </table>
+    </div>
+    <script type="text/javascript">
+    var PlayingList = -1;
+    var num_of_playing = 0;
+    var mediaes;
+
+    $(document).ready(function(){
+        $.get("play.php?action=getlist", function(data1, status){
+            mediaes = $.parseJSON(data1);
+        });
+    });
+
+    function playlist(toPlay = 0) {
+        
+        if (PlayingList == -1) {
+            num_of_playing = 0;
+            PlayingList = toPlay;
+            var count = 0;
+            var value = '';
+            for (key in mediaes) {
+                if (num_of_playing >= count) {
+                    value = mediaes[key];
+                    break;
+                }
+            }
+            playmedia(value);
+            num_of_playing = (num_of_playing + 1) % mediaes.length;
+        }
+    }
+
+    function playmedia(filename) {
+        $.post("play.php", {'action':'content', 'filename':filename}, function(data1, status){
+            $("#content").html(data1);
+            $("#media").onended = playlist(0);
+        });
+    }
+
+    function addOrCut(filename = '') {
+        if (filename == '') {
+            filename = 'H:/CloudMusic//Emilia - Big Big World.mp3';
+        }
+        $.post("play.php", {'action':'ajax', 'filename':filename, 'playlist:':''}, function(data1, status) {
+            var myjson = $.parseJSON(data1);
+            $("#add_cut_button").html(myjson['content']);
+            var list = myjson['list'];
+            mediaes = list;
+            $('#playlisttbl').html('');
+            $.each(list, function(key, value){
+                $("<tr><td><a href='play.php?filename=" + value + "'>" + key + "</a></td><td><a href='javascript:addOrCut(\"" + value + "\")'>RemoveFromList</a></td></tr>").appendTo('#playlisttbl');
+            });
+        });
+    }
+    </script>

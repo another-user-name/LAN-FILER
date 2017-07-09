@@ -1,41 +1,5 @@
 <?php
-include_once 'util.php';
-include_once 'commonElement.php';
-session_start();
-	
-if (isset($_SESSION['user']) && isset($_GET['filename'])) {
-	$filename = localConv($_GET['filename']);
-	if (!file_exists($filename)) {
-		if (isset($_SESSION['convFailFiles'][$_GET['filename']]) && file_exists($_SESSION['convFailFiles'][$_GET['filename']])) {
-			$filename = $_SESSION['convFailFiles'][$_GET['filename']];
-		} else {
-			die("File not found in this server." . "<br />" . $_GET['filename']);
-		}
-	}
-	
-	if (isset($_SESSION['videoStream'])) {
-		if ($_SESSION['videoStream']->path == $filename) {
-		} else {
-			$_SESSION['videoStream'] = new VideoStream($filename);
-		}
-	} else {
-		$_SESSION['videoStream'] = new VideoStream($filename);
-	}
-	$_SESSION['videoStream']->start();
-} else {
-	echo "";
-}
-
-/**
- * Description of VideoStream
- *
- * @author Rana
- * @link http://codesamplez.com/programming/php-html5-video-streaming-tutorial
- * 
- * @changed-by PFH
- * @change-date 2016.10.20
- */
-class VideoStream
+class DownloadStream
 {
     public $path = "";
     private $stream = "";
@@ -189,6 +153,4 @@ class VideoStream
         $this->end();
     }
 }
-
-session_write_close();
 ?>

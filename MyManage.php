@@ -1,8 +1,6 @@
 <?php
-include_once 'fileOperation.php';
-include_once 'util.php';
-include_once 'commonElement.php';
 session_start();
+include_once 'fileOperation.php';
 $ip_addr = $_SERVER['SERVER_ADDR'];
 if (isset($_REQUEST['disk'])) {
 	if (preg_match("/\w/", $_REQUEST['disk']) > 0) {
@@ -33,12 +31,16 @@ function download($file, $downname) {
 	fclose($fp);
 }
 
-if (isset($_SESSION['user'])) {// && $_SESSION['self'] == 332) {
+if (isset($_SESSION['dir']) == false) {
+	$_SESSION['dir'] = "/";
+}
+
+if (isset($_SESSION['self']) && $_SESSION['self'] == 332) {
 	if (isset($_REQUEST['action'])) {
 		if ($_REQUEST['action'] == 'ajax') {
 			if (isset($_REQUEST["dir"])) {
-				$path = localConv($_REQUEST["dir"]);
-				$path = $path .  addEndToDirName($path);
+				//$path = iconv("UTF-8", "GB2312//translit", $_REQUEST["dir"]);
+				$path = $_REQUEST["dir"] .  addEndToDirName($path);
 				if (preg_match("@\w:@", $path) > 0) {
 					$_SESSION['dir'] = $path;
 				} else if (isset($_SESSION['dir'])) {
@@ -66,7 +68,7 @@ if (isset($_SESSION['user'])) {// && $_SESSION['self'] == 332) {
 			}
 		} else if ($_REQUEST['action'] == 'download') {
 			if (isset($_REQUEST['filename'])) {
-				$filename = localConv($_REQUEST['filename']);
+				$filename = $_REQUEST['filename'];
 				header("Content-type:text/html;cjarset=utf-8");
 				if (!isset($_SESSION['dir'])) {
 					$_SESSION['dir'] = getcwd();
@@ -79,7 +81,7 @@ if (isset($_SESSION['user'])) {// && $_SESSION['self'] == 332) {
 			} else {
 				$ret = array();
 				$ret['status'] = 'fail';
-				$name = localConv($_FILES["file"]["name"]);
+				$name = $_FILES["file"]["name"];
 				$name = substr($name, strrpos($name, '/'));
 				if (move_uploaded_file($_FILES["file"]["tmp_name"], "./upload-files/" . $name) == false) {
 					$ret['status'] = 'fail';
@@ -96,7 +98,7 @@ if (isset($_SESSION['user'])) {// && $_SESSION['self'] == 332) {
 				echo json_encode($ret);
 			}
 		} else if ($_REQUEST['action'] == 'logout') {
-			unset($_SESSION['user']);
+			unset($_SESSION['self']);
 			$ret = array('status'=>'success');
 			echo json_encode($ret);
 		}
@@ -107,8 +109,22 @@ if (isset($_SESSION['user'])) {// && $_SESSION['self'] == 332) {
 		formalHtml($ip_addr, $_SESSION['dir']);
 	}
 } else {
-	$_SESSION['lastPage'] = 'filemanage.php';
-	loginPage();
+	if (isset($_REQUEST['action']) && $_REQUEST['action'] == 'login') {
+		$return = array();
+		if (isset($_REQUEST['username']) && isset($_REQUEST['password'])) {
+			if ($_REQUEST['username'] == 'admin' && $_REQUEST['password'] == '6666662333') {
+				$return['status'] = 'success';
+				$_SESSION['self'] = 332;
+			} else {
+				$return['status'] = 'fail';
+			}
+		} else {
+			$return['status'] = 'fail';
+		}
+		echo json_encode($return);
+	} else {
+		defaulMainBody($ip_addr);
+	}
 }
 
 function defaulMainBody($ip) {
@@ -118,12 +134,11 @@ function defaulMainBody($ip) {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script type="text/javascript" src="/js/jquery.min.js"></script>
-    <link rel="stylesheet" href="/css/bootstrap.min.css">
-	<link rel="stylesheet" href="/css/bootstrap.min.css">
-	<link rel="stylesheet" href="/css/font-awesome.min.css">
-    <script src="/js/bootstrap.min.js"></script>
-    <script src="/js/mylib.js"></script>
+    <script type="text/javascript" src="http://{$ip}/js/jquery.min.js"></script>
+    <link rel="stylesheet" href="http://{$ip}/css/bootstrap.min.css">
+	<link rel="stylesheet" href="http://{$ip}/css/bootstrap.min.css">
+	<link rel="stylesheet" href="http://{$ip}/css/font-awesome.min.css">
+    <script src="http://{$ip}/js/bootstrap.min.js"></script>
   </head>
   <body>
 		<script>
@@ -138,7 +153,7 @@ function defaulMainBody($ip) {
 					changeClass('passworddiv', "form-group has-error");
 				}
 			} else {
-				$.post("filemanage.php", {'action':'login', 'username':username, 'password':password}, function(data1, status) {
+				$.post("http://{$ip}/filemanage.php", {'action':'login', 'username':username, 'password':password}, function(data1, status) {
 		            	var myjson = $.parseJSON(data1);
 						if (myjson['status'] == 'success') {
 							window.location.href = 'filemanage.php';
@@ -182,17 +197,35 @@ function formalHtml($ip, $path)
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script type="text/javascript" src="/js/jquery.min.js"></script>
-    <link rel="stylesheet" href="/css/bootstrap.min.css">
-	<link rel="stylesheet" href="/css/bootstrap.min.css">
-	<link rel="stylesheet" href="/css/font-awesome.min.css">
-    <script src="/js/bootstrap.min.js"></script>
-    <script src="/js/mylib.js"></script>
+    <script type="text/javascript" src="http://{$ip}/js/jquery.min.js"></script>
+    <link rel="stylesheet" href="http://{$ip}/css/bootstrap.min.css">
+	<link rel="stylesheet" href="http://{$ip}/css/bootstrap.min.css">
+	<link rel="stylesheet" href="http://{$ip}/css/font-awesome.min.css">
+    <script src="http://{$ip}/js/bootstrap.min.js"></script>
   </head>
   <body>
-myendsign;
-	myHeader();
-	echo <<<myendsign
+  <table class='table'>
+  <tr>
+  <td>
+    <div style="margin:30px;margin-bottom:0px;">
+		<a href="javascript:goback()">
+			<h1>
+				<i class="icon-arrow-left"></i>&nbsp;&nbsp;Go Back
+			</h1>
+		</a>
+	</div>
+	</td>
+	<td align="right">
+	<div style="margin:30px;margin-bottom:0px;">
+		<a href="javascript:logout()">
+			<h1>
+				Log Out&nbsp;&nbsp;
+			</h1>
+		</a>
+	</div>
+	</td>
+	</tr>
+	</table>
 	<div style="margin:30px">
 	<table class="table table-condensed">
 	<tr>
@@ -200,7 +233,7 @@ myendsign;
 	<font size='5' color='blue'>DISK:</font>
 	</td>
 myendsign;
-if (strpos(php_uname('s'),'Windows') >= 0) {
+if (strpos(php_uname('s'),'Windows') != -1) {
 	$fso = new COM('Scripting.FileSystemObject');
 	foreach($fso->Drives as $driver) {
 		$d0 = $fso->GetDrive($driver);
@@ -256,24 +289,18 @@ echo <<<myendsign
 				
 			});
 		}
-		test = 0;
-function next() {
-
-	// if (now < arr.length) {
-	// 	$("html,body").animate({scrollTop:$("table:first tr:gt(0):eq(" + arr[now] +")").offset().top}, 500);
-	// 	now = now + 1;
-	// }
-	var myvar = $("table:first tr:eq(" + test +")").html();
-	$("html,body").animate({scrollTop:$("#file_list tr:eq(" + test +")").offset().top}, 500);
-	test = test + 3;
-}
+        function goback() {
+            history.back();
+        }
+		function logout() {
+			$.post("http://{$ip}/filemanage.php", {'action':'logout'}, function(data, status) {
+				var myjson = $.parseJSON(data);
+				if (myjson['status'] == 'success') {
+					window.location.href = "http://{$ip}/filemanage.php";
+				}
+			});
+		}
     </script>
-    <!--div id="helper" style="position:fixed; right:20px; top:auto; bottom:auto; z-index:10086;">
-    	<input type='text' id='searchkey'></input>
-    	<br /><br />
-    	<button class='btn btn-default' onClick='next()'>next</button>
-    	<button class='btn btn-default'>prev</button>
-    </div-->
   	<div class="container" align="center">
   	  <div class="row">
   	    <div class="container">
@@ -295,7 +322,7 @@ function next() {
 		            	path = "{$path}";
 		            }
 
-		            $.post("filemanage.php", {'action':'ajax', 'dir':path}, function(data1, status) {
+		            $.post("http://{$ip}/filemanage.php", {'action':'ajax', 'dir':path}, function(data1, status) {
 		            	var myjson = $.parseJSON(data1);
 						$("#file_list").html("");
 		            	$.each(myjson, makeFile);
@@ -309,7 +336,7 @@ function next() {
 									$("<tr><td><i class='icon-folder-close-alt icon-2x'></i></td><td><a href=\"javascript:getData('" + key + "')\">" + key.substr(key.lastIndexOf('/') + 1) + "</a></td></tr>").appendTo("#file_list");
 								}
 			      			} else if (value == "f") {
-								$("<tr><td><i class='icon-file-alt icon-2x'></i></td><td><a href='media.php?action=download&filename=" + key + "'>" + key.substr(key.lastIndexOf('/') + 1) + "</a></td><td><a href='play.php?filename=" + key + "'>play</a></td></tr>").appendTo("#file_list");
+								$("<tr><td><i class='icon-file-alt icon-2x'></i></td><td><a href='http://{$ip}/filemanage.php?action=download&filename=" + key + "'>" + key.substr(key.lastIndexOf('/') + 1) + "</a></td><td><a href='http://{$ip}/play.php?filename=" + key + "'>play</a></td></tr>").appendTo("#file_list");
 			      			} else if (value == "p") {
 								var newRow = "<tr><td><i class='icon-folder-close-alt icon-2x'></i></td><td><a href=\"javascript:getUpFolder('" + key + "')\">" + "<i class='icon-arrow-up icon-2x'></i>" + "</a></td></tr>";
 								var tr0 = $("#file_list tr").eq(0);
@@ -322,14 +349,14 @@ function next() {
 		          }
 				  
 				  function getData(path) {
-					  $.post("filemanage.php", {'action':'ajax', 'dir':path}, function(data1, stauts){
+					  $.post("http://{$ip}/filemanage.php", {'action':'ajax', 'dir':path}, function(data1, stauts){
 							var myjson = $.parseJSON(data1);
 							$("#file_list").html("");
 							$.each(myjson, makeFile);
 					  });
 				  }
 				  function getUpFolder(path) {
-					  $.post("filemanage.php", {'action':'ajax', 'pdir':path}, function(data1, stauts){
+					  $.post("http://{$ip}/filemanage.php", {'action':'ajax', 'pdir':path}, function(data1, stauts){
 							var myjson = $.parseJSON(data1);
 							$("#file_list").html("");
 							$.each(myjson, makeFile);
@@ -342,11 +369,6 @@ function next() {
   	    </div>
   	  </div>
   	</div>
-myendsign;
-
-	myFooter();
-	
-	echo <<<myendsign
   </body>
 </html>
 myendsign;

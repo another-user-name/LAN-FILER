@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>文件上传</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="./csslib/bootstrap.min.css">
+    <script src="./jslib/jquery.min.js"></script>
+    <script src="./jslib/bootstrap.min.js"></script>
+  </head>
+  <body>
+    <div class="container" style="text-align: center; margin: auto; top: 50%;">
+      <div class="row" style="top: 50%;">
+        <div class="col-md-12">
+          <div class="container" style="margin: auto; align-content: center; text-align: center;">
+            <form action="file_upload.php" method="POST" enctype="multipart/form-data">
+              <label for="file">Filename:</label>
+              <input type="file" name="file" id="file"></input>
+              <br />
+              <input type="submit" name="submit" value="submit"></input>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
